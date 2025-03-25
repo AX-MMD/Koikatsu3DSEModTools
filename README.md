@@ -8,10 +8,5 @@ First, you must download KoikatsuModdingTools and the proper Unity version. Foll
 
 Download the latest release on GitHub, then extract it from the .zip, then drag and drop the content into your KoikatsuModdingTools folder. This operation should not ask you to overwrite files, and once done you should have a `/3DSE` folder in `<tools folder>/Assets/Editor`.
 
-Now you can open your KoikatsuModdingTools folder in Unity.
-
-![][image1]  
-![][image2]
-
 # Documentation
 https://docs.google.com/document/d/1WJgnBjcwGyEbW5dCaUketodu4NnESuEmuuUAQhNfpu8/edit?usp=drive_link
