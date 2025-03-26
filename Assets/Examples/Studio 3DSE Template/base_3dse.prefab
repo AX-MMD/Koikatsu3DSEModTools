@@ -19,7 +19,7 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4057418986550584}
-  - component: {fileID: 114338279781290812}
+  - component: {fileID: 114522444076527036}
   m_Layer: 0
   m_Name: base_3dse
   m_TagString: Untagged
@@ -40,7 +40,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114338279781290812
+--- !u!114 &114522444076527036
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -48,7 +48,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1522625528077124}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e1c3b8853855c264988ede3ceddb6153, type: 3}
+  m_Script: {fileID: 11500000, guid: 1bfa384a41ed26f48a2d41b36c345fca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _clip: {fileID: 0}

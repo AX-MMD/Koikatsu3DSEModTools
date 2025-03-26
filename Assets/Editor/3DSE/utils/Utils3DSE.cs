@@ -319,7 +319,7 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 				return input;
 			}
 
-			string[] words = Regex.Split(Zipmod.ReplaceInvalidChars(input.Replace(".", "_").Replace(" ", "_")), @"[\s_]+");
+			string[] words = Regex.Split(Zipmod.ReplaceInvalidChars(input.Replace(".", "_").Replace(" ", "_").Replace(",", "_")), @"[\s_]+");
 			StringBuilder itemCase = new StringBuilder();
 
 			foreach (string word in words)
