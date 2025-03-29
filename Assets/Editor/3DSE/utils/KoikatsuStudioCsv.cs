@@ -321,12 +321,12 @@ namespace IllusionMods.KoikatsuStudioCsv
 			private void LoadModInfoFromItemFiles()
 			{
 				Match match;
-				if ((match = Regex.Match(Path.GetFileName(GetDefaultListFile()), @"ItemList_(\d+)_(\d+)_(\d+).csv$")).Success)
+				if ((match = Regex.Match(Path.GetFileName(GetDefaultListFile() ?? ""), @"ItemList_(\d+)_(\d+)_(\d+).csv$")).Success)
 				{
 					modGroupNumber = match.Groups[2].Value;
 					modCategoryNumber = match.Groups[3].Value;
 				}
-				else if ((match = Regex.Match(Path.GetFileName(GetDefaultCategoryFile()), @"ItemCategory_(\d+)_(\d+).csv$")).Success)
+				else if ((match = Regex.Match(Path.GetFileName(GetDefaultCategoryFile() ?? ""), @"ItemCategory_(\d+)_(\d+).csv$")).Success)
 				{
 					modGroupNumber = match.Groups[2].Value;
 					modCategoryNumber = null;
