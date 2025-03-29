@@ -238,7 +238,7 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 					File.Delete(categoryOutputPath + ".meta");
 				}
 			}
-			
+
 			return new Utils.GenerationResult
 			{
 				createCount = prefabCreateCount,
@@ -274,15 +274,23 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 			string backupPath = Path.Combine(this.csvFolderPath, BackupPath);
 			if (Directory.Exists(backupPath))
 			{
-				foreach (string file in Directory.GetFiles(this.csvFolderPath, "*.csv"))
+				string[] bkFiles = Directory.GetFiles(backupPath, "*.csv");
+				string[] csvFiles = Directory.GetFiles(this.csvFolderPath, "*.csv");
+				for (int i = 0; i < csvFiles.Length; i++)
 				{
-					File.Delete(file);
-					File.Delete(file + ".meta");
-				}
-
-				foreach (string file in Directory.GetFiles(backupPath, "*.csv"))
-				{
-					File.Copy(file, Path.Combine(this.csvFolderPath, Path.GetFileName(file)), true);
+					try 
+					{
+						File.Delete(csvFiles[i]);
+						File.Delete(csvFiles[i] + ".meta");
+						if (i < bkFiles.Length)
+						{
+							File.Copy(bkFiles[i], Path.Combine(this.csvFolderPath, Path.GetFileName(bkFiles[i])), true);
+						}
+					}
+					catch (Exception e)
+					{
+						Debug.LogError("Failed to delete file: " + csvFiles[i] + "\n" + e.Message);
+					}
 				}
 			}
 		}
@@ -294,36 +302,50 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 			{
 				foreach (string file in Directory.GetFiles(backupPath, "*.csv"))
 				{
-					File.Delete(file);
-					File.Delete(file + ".meta");
+					try
+					{
+						File.Delete(file);
+						File.Delete(file + ".meta");
+					}
+					catch (Exception e)
+					{
+						Debug.LogError("Failed to delete file: " + file + "\n" + e.Message);
+					}
 				}
-				Directory.Delete(backupPath);
-				File.Delete(backupPath + ".meta");
+				try
+				{
+					Directory.Delete(backupPath, true);
+					File.Delete(backupPath + ".meta");
+				}
+				catch (Exception e)
+				{
+					Debug.LogError("Failed to delete directory: " + backupPath + "\n" + e.Message);
+				}
 			}
 		}
 
 		public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    this.DeleteBackupCSV();
-                }
+		protected virtual void Dispose(bool disposing)
+		{
+			if (!disposed)
+			{
+				if (disposing)
+				{
+					this.DeleteBackupCSV();
+				}
 
-                disposed = true;
-            }
-        }
+				disposed = true;
+			}
+		}
 
-        ~KK3DSEModManager()
-        {
-            Dispose(false);
-        }
+		~KK3DSEModManager()
+		{
+			Dispose(false);
+		}
 	}
 }
