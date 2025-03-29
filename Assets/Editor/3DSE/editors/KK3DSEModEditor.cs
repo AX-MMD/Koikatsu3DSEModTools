@@ -215,7 +215,7 @@ public class Modify3DSEModWindow : EditorWindow
 
 	private static void EnsureDataFilesFolderIntegrity(CsvUtils.ItemFileAggregate itemFileAgg)
 	{
-		if ( ! (new string[] { itemFileAgg.GetDefaultGroupFile(), itemFileAgg.GetDefaultCategoryFile(), itemFileAgg.GetDefaultListFile() }.Contains(null)))
+		if ( ! (itemFileAgg.GetDefaultGroupFile() == null || itemFileAgg.GetDefaultCategoryFile() == null || itemFileAgg.GetDefaultListFile() == null))
 		{
 			return; // All files are present, all is good
 		}
@@ -237,10 +237,9 @@ public class Modify3DSEModWindow : EditorWindow
 		{
 			groupNumber = groupNumber ?? fields.muid;
 			groupName = (groupNumber == "11" || groupNumber == null) ? "3DSE" : fields.name;
-			CsvUtils.WriteToCsv(
-				Path.Combine(itemFileAgg.csvFolder, "ItemGroup_" + Path.GetFileName(itemFileAgg.csvFolder) + ".csv"),
-				new CsvUtils.StudioGroup[] { new CsvUtils.StudioGroup(groupNumber, groupName) }
-			);
+			string path = Path.Combine(itemFileAgg.csvFolder, "ItemGroup_DataFiles.csv");
+			CsvUtils.WriteToCsv(path, new CsvUtils.StudioGroup[] { new CsvUtils.StudioGroup(groupNumber, groupName) });
+			File.Create(path + ".meta").Close();
 		}
 		else
 		{
@@ -250,7 +249,9 @@ public class Modify3DSEModWindow : EditorWindow
 		// ItemCategory integrity
 		if (itemFileAgg.GetDefaultCategoryFile() == null)
 		{
-			File.Create(Path.Combine(itemFileAgg.csvFolder, "ItemCategory_00_" + groupNumber + ".csv")).Close();
+			string path = Path.Combine(itemFileAgg.csvFolder, "ItemCategory_00_" + groupNumber + ".csv");
+			CsvUtils.WriteToCsv(path, new CsvUtils.StudioCategory[] { });
+			File.Create(path + ".meta").Close();
 			itemFileAgg.Refresh();
 		}
 
@@ -258,7 +259,9 @@ public class Modify3DSEModWindow : EditorWindow
 		// ItemList integrity
 		if (itemFileAgg.GetDefaultListFile() == null)
 		{
-			File.Create(Path.Combine(itemFileAgg.csvFolder, "ItemList_00_" + groupNumber + "_" + categoryNumber + ".csv")).Close();
+			string path = Path.Combine(itemFileAgg.csvFolder, "ItemList_00_" + groupNumber + "_" + categoryNumber + ".csv");
+			CsvUtils.WriteToCsv(path, new CsvUtils.StudioItem[] { });
+			File.Create(path + ".meta").Close();
 		}
 		else if (categoryNumber == null)
 		{
@@ -292,6 +295,7 @@ public class Modify3DSEModWindow : EditorWindow
 		}
 
 		itemFileAgg.Refresh();
+		AssetDatabase.Refresh();
 	}
 
 	private void OnGUI()
