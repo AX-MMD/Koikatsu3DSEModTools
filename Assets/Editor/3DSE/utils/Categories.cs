@@ -6,7 +6,6 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-
 namespace IllusionMods.Koikatsu3DSECategoryTool {
 
 	public class Category
@@ -75,6 +74,14 @@ namespace IllusionMods.Koikatsu3DSECategoryTool {
 
 	public class StudioItemParam
 	{
+		private string _id;
+		public string id { 
+			get { return _id; }
+			set { 
+				if (value != null) int.Parse(value);
+				_id = value; 
+			}
+		}
 		private string _itemName;
 		public string itemName
 		{
@@ -97,15 +104,16 @@ namespace IllusionMods.Koikatsu3DSECategoryTool {
 		public string path { get; set; }
 		public PrefabModifier prefabModifier { get; set; }
 		public string prefabName { 
-			get
-			{
-				return Utils.ToSnakeCase(_itemName);
-			}
+			get { return Utils.ToSnakeCase(_itemName); }
+		}
+		public string prefabID {
+			get { return id == null ? null : Utils.AddFileID(this.prefabName, this.id); }
 		}
 
-		public StudioItemParam(string itemName, string path = null, PrefabModifier prefabModifier = null)
+		public StudioItemParam(string itemName, string id = null, string path = null, PrefabModifier prefabModifier = null)
 		{
 			this.itemName = itemName;
+			this.id = id;
 			this.path = path;
 			this.prefabModifier = prefabModifier;
 		}
@@ -232,8 +240,15 @@ namespace IllusionMods.Koikatsu3DSECategoryTool {
 				}
 				else if (AudioProcessor.IsValidAudioFile(entry) && index <= maxPerCategory)
 				{
+					string filename = Path.GetFileNameWithoutExtension(entry);
+					Match idMatch = Regex.Match(filename, Utils.FileIDPattern);
+					if (idMatch.Success && idMatch.Groups.Count > 1)
+					{
+						filename = filename.Substring(0, idMatch.Groups[1].Index - 1);
+					}
 					items.Add(new StudioItemParam(
-						BuildItemName(pathName, cumulTags, entry, index++), 
+						BuildItemName(pathName, cumulTags, filename, index++),
+						idMatch.Success ? idMatch.Groups[1].Value : null,
 						Utils.FullPathToAssetPath(entry), 
 						TagManager.GetPrefabModifier(cumulTags)
 					));

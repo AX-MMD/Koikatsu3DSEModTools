@@ -14,6 +14,8 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 
 	public static class Utils
 	{
+		public const string FileIDPattern = @"_%(\d+)%$";
+
 		public struct GenerationResult
 		{
 			public int createCount;
@@ -310,6 +312,16 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 			}
 
 			return pascalCase.ToString();
+		}
+
+		public static string AddFileID(string input, string fileID)
+		{
+			return string.IsNullOrEmpty(input) ? input : input + string.Format("_%{0}%", fileID);
+		}
+
+		public static string AddFileID(string input, int fileID)
+		{
+			return AddFileID(input, fileID.ToString());
 		}
 
 		public static string ToItemCase(string input)

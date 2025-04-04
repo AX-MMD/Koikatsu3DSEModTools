@@ -111,11 +111,20 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 				Debug.Log("Cleared output directory: " + this.prefabOutputPath);
 			}
 
-			HashSet<string> oldPrefabs = new HashSet<string>();
 			string[] oldPrefabPaths = Directory.GetFiles(this.prefabOutputPath, "*.prefab", SearchOption.AllDirectories);
+			HashSet<string> legacyOldPrefabs = new HashSet<string>();
+			Dictionary<string, string> oldPrefabs = new Dictionary<string, string>();
 			foreach (string oldPrefabPath in oldPrefabPaths)
 			{
-				oldPrefabs.Add(oldPrefabPath.Replace("\\", "/"));
+				Match idMatch = Regex.Match(Path.GetFileNameWithoutExtension(oldPrefabPath), Utils.FileIDPattern);
+				if (!idMatch.Success)
+				{
+					legacyOldPrefabs.Add(oldPrefabPath.Replace("\\", "/"));
+				}
+				else
+				{
+					oldPrefabs[idMatch.Groups[1].Value] = oldPrefabPath.Replace("\\", "/");
+				}
 			}
 
 			int prefabCreateCount = 0;
@@ -151,7 +160,7 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 
 				int itemCount = 0;
 				categoryCount++;
-				foreach (StudioItemParam file in category.items)
+				foreach (StudioItemParam item in category.items)
 				{
 					itemCount++;
 					EditorUtility.DisplayProgressBar(
@@ -160,14 +169,25 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 						(float)itemCount / category.items.Count
 					);
 
-					string newPrefabPath = Path.Combine(categoryOutputPath, file.prefabName + ".prefab").Replace("\\", "/");
+					string newPrefabPath = Path.Combine(categoryOutputPath, item.prefabID + ".prefab").Replace("\\", "/");
+					string legacyPrefabPath = Path.Combine(categoryOutputPath, item.prefabName + ".prefab").Replace("\\", "/");
 					GameObject prefab;
 
-					if (oldPrefabs.Contains(newPrefabPath))
+					if (oldPrefabs.ContainsKey(item.id) && File.Exists(oldPrefabs[item.id]))
 					{
-						oldPrefabs.Remove(newPrefabPath);
 						prefab = (GameObject)PrefabUtility.InstantiatePrefab(
-							AssetDatabase.LoadAssetAtPath(newPrefabPath, typeof(GameObject))
+							AssetDatabase.LoadAssetAtPath(oldPrefabs[item.id], typeof(GameObject))
+						);
+						if (oldPrefabs[item.id] == newPrefabPath)
+						{
+							oldPrefabs.Remove(item.id);
+						}
+						prefabUpdateCount++;
+					}
+					else if (legacyOldPrefabs.Contains(legacyPrefabPath))
+					{
+						prefab = (GameObject)PrefabUtility.InstantiatePrefab(
+							AssetDatabase.LoadAssetAtPath(legacyPrefabPath, typeof(GameObject))
 						);
 						prefabUpdateCount++;
 					}
@@ -178,10 +198,10 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 					}
 
 					// Load the AudioClip from the .wav file
-					AudioClip audioClip = AssetDatabase.LoadAssetAtPath<AudioClip>(file.path);
+					AudioClip audioClip = AssetDatabase.LoadAssetAtPath<AudioClip>(item.path);
 					if (audioClip == null)
 					{
-						throw new Exception("AudioClip not found at path: " + file.path);
+						throw new Exception("AudioClip not found at path: " + item.path);
 					}
 
 					// Assign the AudioClip to the SEComponent
@@ -189,17 +209,17 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 					if (seComponent != null)
 					{
 						seComponent._clip = audioClip;
-						if (file.prefabModifier.isLoop)
+						if (item.prefabModifier.isLoop)
 						{
 							seComponent._isLoop = true;
 						}
-						if (file.prefabModifier.threshold != null)
+						if (item.prefabModifier.threshold != null)
 						{
-							seComponent._rolloffDistance = new Threshold(file.prefabModifier.threshold.Item1, file.prefabModifier.threshold.Item2);
+							seComponent._rolloffDistance = new Threshold(item.prefabModifier.threshold.Item1, item.prefabModifier.threshold.Item2);
 						}
-						if (file.prefabModifier.volume != -1.0f)
+						if (item.prefabModifier.volume != -1.0f)
 						{
-							seComponent._volume = file.prefabModifier.volume;
+							seComponent._volume = item.prefabModifier.volume;
 						}
 					}
 					else
@@ -223,10 +243,15 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 				}
 			}
 			// Delete any old prefabs that were not updated
-			foreach (string oldPrefab in oldPrefabs)
+			foreach (string oldPrefabPath in oldPrefabs.Values)
 			{
-				File.Delete(oldPrefab);
-				File.Delete(oldPrefab + ".meta");
+				File.Delete(oldPrefabPath);
+				File.Delete(oldPrefabPath + ".meta");
+			}
+			foreach (string legacyOldPrefab in legacyOldPrefabs)
+			{
+				File.Delete(legacyOldPrefab);
+				File.Delete(legacyOldPrefab + ".meta");
 			}
 
 			// Delete empty directories
@@ -243,7 +268,7 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 			{
 				createCount = prefabCreateCount,
 				updateCount = prefabUpdateCount,
-				deleteCount = oldPrefabs.Count
+				deleteCount = oldPrefabs.Count + legacyOldPrefabs.Count,
 			};
 		}
 

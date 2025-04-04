@@ -208,11 +208,11 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 		{
 			if (tags.Contains(Tags.KeepName))
 			{
-				return Path.GetFileNameWithoutExtension(filename) + (tags.Contains(Tags.Indexed) ? index.ToString("D2") : "");
+				return filename + (tags.Contains(Tags.Indexed) ? index.ToString("D2") : "");
 			}
 			if (tags.Contains(Tags.FormatKeepName))
 			{
-				return Utils.ToItemCase(Path.GetFileNameWithoutExtension(filename)) + (tags.Contains(Tags.Indexed) ? index.ToString("D2") : "");
+				return Utils.ToItemCase(filename) + (tags.Contains(Tags.Indexed) ? index.ToString("D2") : "");
 			}
 
 			// Iterate in reverse, deeper tags should be applied first
@@ -236,11 +236,11 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 
 			if (tags.Contains(Tags.AppendFilename))
 			{
-				name += Path.GetFileNameWithoutExtension(filename);
+				name += filename;
 			}
 			if (tags.Contains(Tags.PrependFilename))
 			{
-				name = Path.GetFileNameWithoutExtension(filename) + name;
+				name = filename + name;
 			}
 
 			return tags.Contains(Tags.Indexed) ? name + index.ToString("D2") : name;

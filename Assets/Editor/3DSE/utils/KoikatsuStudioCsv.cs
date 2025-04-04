@@ -454,6 +454,91 @@ namespace IllusionMods.KoikatsuStudioCsv
 
 		}
 
+		public static bool EnsureDataFilesFolderIntegrity(ItemFileAggregate itemFileAgg, Utils.ManifestInfo fields)
+		{
+			if ( ! (itemFileAgg.GetDefaultGroupFile() == null || itemFileAgg.GetDefaultCategoryFile() == null || itemFileAgg.GetDefaultListFile() == null))
+			{
+				return true; // All files are present, all is good
+			}
+
+			if ( ! EditorUtility.DisplayDialog("Rebuild Data Files", "Some List/Studio files are missing or corrupt, try to rebuild?", "Yes", "No"))
+			{
+				throw new Exception("Rebuild aborted by user");
+			}
+
+			// If null, both ItemGroup and ItemCategory files are missing or have an incorrect name.
+			string groupNumber = itemFileAgg.modGroupNumber;
+			// If null, ItemList file is missing or has an incorrect name.
+			string categoryNumber = itemFileAgg.modCategoryNumber; 
+			// If both ItemCategory and ItemList files are missing, rebuild assuming default (11, 3DSE).
+			string groupName;
+
+			// ItemGroup integrity
+			if (itemFileAgg.GetDefaultGroupFile() == null || itemFileAgg.IsEmptyEntries<StudioGroup>())
+			{
+				groupNumber = groupNumber ?? fields.muid;
+				groupName = (groupNumber == "11" || groupNumber == null) ? "3DSE" : fields.name;
+				string path = Path.Combine(itemFileAgg.csvFolder, "ItemGroup_DataFiles.csv");
+				WriteToCsv(path, new StudioGroup[] { new StudioGroup(groupNumber, groupName) });
+				File.Create(path + ".meta").Close();
+			}
+			else
+			{
+				groupNumber = itemFileAgg.GetFirstEntry<StudioGroup>().groupNumber;
+			}
+
+			// ItemCategory integrity
+			if (itemFileAgg.GetDefaultCategoryFile() == null)
+			{
+				string path = Path.Combine(itemFileAgg.csvFolder, "ItemCategory_00_" + groupNumber + ".csv");
+				WriteToCsv(path, new StudioCategory[] { });
+				File.Create(path + ".meta").Close();
+				itemFileAgg.Refresh();
+			}
+
+
+			// ItemList integrity
+			if (itemFileAgg.GetDefaultListFile() == null)
+			{
+				string path = Path.Combine(itemFileAgg.csvFolder, "ItemList_00_" + groupNumber + "_" + categoryNumber + ".csv");
+				WriteToCsv(path, new StudioItem[] { });
+				File.Create(path + ".meta").Close();
+			}
+			else if (categoryNumber == null)
+			{
+				// Is incorrect ItemList file name, renaming file.
+				StudioCategory first = itemFileAgg.GetFirstEntry<StudioCategory>();
+				if (first != null)
+				{
+					categoryNumber = first.categoryNumber;
+				}
+				else if (!itemFileAgg.IsEmptyEntries<StudioItem>())
+				{
+					categoryNumber = itemFileAgg.GetFirstEntry<StudioItem>().categoryNumber;
+				}
+				else
+				{
+					if (groupNumber != "11")
+					{
+						categoryNumber = "01";
+					}
+					else if (!string.IsNullOrEmpty(fields.muid))
+					{
+						categoryNumber = fields.muid + "01";
+					}
+					else
+					{
+						throw new Exception("Rebuild Failed, too many missing elements");
+					}
+				}
+
+				Utils.FileMove(itemFileAgg.GetDefaultListFile(), Path.Combine(itemFileAgg.csvFolder, "ItemList_00_" + groupNumber + "_" + categoryNumber + ".csv"));
+			}
+
+			itemFileAgg.Refresh();
+			return false; // Files were missing or corrupt, we had to rebuild them
+		}
+
 		private static string GetItemDataFolderRecursive(string path)
 		{
 			string[] folders = Directory.GetDirectories(path);
@@ -562,7 +647,7 @@ namespace IllusionMods.KoikatsuStudioCsv
 
 		public static Utils.GenerationResult GenerateCSV(string modPath, bool create, IList<Category> categories)
 		{
-			CsvUtils.ItemFileAggregate csvAgg = CsvUtils.GetItemFileAggregate(modPath);
+			ItemFileAggregate csvAgg = GetItemFileAggregate(modPath);
 			string categoryPath = csvAgg.GetDefaultCategoryFile();
 			string itemListPath = csvAgg.GetDefaultListFile();
 
@@ -585,13 +670,13 @@ namespace IllusionMods.KoikatsuStudioCsv
 
 			if (!create)
 			{
-				foreach (StudioCategory category in CsvUtils.DeserializeCsvStudio<StudioCategory>(categoryPath))
+				foreach (StudioCategory category in DeserializeCsvStudio<StudioCategory>(categoryPath))
 				{
 					oldCategories[category.GetKey()] = category;
 				}
-				foreach (StudioItem entry in CsvUtils.DeserializeCsvStudio<StudioItem>(itemListPath))
+				foreach (StudioItem entry in DeserializeCsvStudio<StudioItem>(itemListPath))
 				{
-					oldEntries[entry.GetKey()] = entry;
+					oldEntries[entry.GetID()] = entry;
 				}
 
 				if (oldEntries.Count > 0)
@@ -601,6 +686,7 @@ namespace IllusionMods.KoikatsuStudioCsv
 				if (oldCategories.Count > 0)
 				{
 					categoryNumber = Utils.GetLastValue(oldCategories.Values).GetID();
+					categoryNumber = (int.Parse(categoryNumber) + 1).ToString(new string('0', categoryNumber.Length));
 				}
 			}
 
@@ -612,8 +698,8 @@ namespace IllusionMods.KoikatsuStudioCsv
 			foreach (Category category in categories.OrderBy(x => x.author).ThenBy(x => x.name, new NaturalSortComparer()))
 			{
 				string categoryKey = category.GetKey();
-				string currentCategoryNumber = categoryNumber;
 				string bundlePath = Utils.GetAssetBundlePath(modPath, categoryKey);
+				string currentCategoryNumber;
 
 				categoryCount++;
 				EditorUtility.DisplayProgressBar(
@@ -624,22 +710,23 @@ namespace IllusionMods.KoikatsuStudioCsv
 
 				if (oldCategories.ContainsKey(categoryKey))
 				{
-					currentCategoryNumber = oldCategories[categoryKey].GetID();
 					newCategories[categoryKey] = oldCategories[categoryKey];
+					currentCategoryNumber = newCategories[categoryKey].GetID();
 				}
 				else
 				{
-					newCategories[categoryKey] = new StudioCategory(currentCategoryNumber, categoryKey);
+					newCategories[categoryKey] = new StudioCategory(categoryNumber, categoryKey);
+					currentCategoryNumber = categoryNumber;
 					// Increment to the next category number, takes effect on next iteration
 					categoryNumber = (int.Parse(categoryNumber) + 1).ToString(new string('0', categoryNumber.Length));
 				}
 
 				foreach (StudioItemParam item in category.items.OrderBy(x => x.prefabName, new NaturalSortComparer()))
 				{
-					string itemKey = item.prefabName + currentCategoryNumber;
+					string itemKey = create || item.id == null ? id.ToString() : item.id;
 					if (newEntries.ContainsKey(itemKey))
 					{
-						throw new Exception("Duplicate entry '"+ item.prefabName +"' for category '"+ categoryKey +"' with item name '"+ item.itemName +"'.");
+						throw new Exception("Duplicate entry '"+ item.id +"' for category '"+ categoryKey +"' with item name '"+ item.itemName +"'.");
 					}
 					else if (oldEntries.ContainsKey(itemKey))
 					{
@@ -649,22 +736,36 @@ namespace IllusionMods.KoikatsuStudioCsv
 						entry.categoryNumber = currentCategoryNumber;
 						entry.name = item.itemName;
 						entry.bundlePath = bundlePath;
-						entry.fileName = item.prefabName;
+						entry.fileName = item.prefabID;
+
 						newEntries[itemKey] = entry;
 						updateCount++;
 					}
 					else
 					{
 						// Add new entry
-						newEntries[itemKey] = new StudioItem(id.ToString(), groupNumber, currentCategoryNumber, item.itemName, "", bundlePath, item.prefabName, "", false, false, false, false, false, false, false, false, false);
+						string newPath = Path.Combine(
+							Path.GetDirectoryName(item.path),
+							Utils.AddFileID(
+								Regex.Replace(Path.GetFileNameWithoutExtension(item.path), Utils.FileIDPattern, ""),
+								id
+							) + Path.GetExtension(item.path)
+						);
+
+						if (!File.Exists(newPath))
+						{
+							Utils.FileMove(item.path, newPath);
+						}
+						item.id = itemKey;
+						newEntries[itemKey] = new StudioItem(id.ToString(), groupNumber, currentCategoryNumber, item.itemName, "", bundlePath, item.prefabID, "", false, false, false, false, false, false, false, false, false);
 						id++;
 						createCount++;
 					}
 				}
 			}
 
-			CsvUtils.WriteToCsv(categoryPath, newCategories.Values.ToList().OrderBy(x => int.Parse(x.GetID())));
-			CsvUtils.WriteToCsv(itemListPath, newEntries.Values.ToList().OrderBy(x => int.Parse(x.GetID())));
+			WriteToCsv(categoryPath, newCategories.Values.ToList().OrderBy(x => int.Parse(x.GetID())));
+			WriteToCsv(itemListPath, newEntries.Values.ToList().OrderBy(x => int.Parse(x.GetID())));
 			return new Utils.GenerationResult
 			{
 				createCount = createCount,
