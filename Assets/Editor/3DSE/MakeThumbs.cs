@@ -46,6 +46,17 @@ public class MakeThumbs : MonoBehaviour
                     continue;
                 }
 
+                // delete existing thumbnails
+                string[] existingThumbs = Directory.GetFiles(selectedPath, "*.png", SearchOption.TopDirectoryOnly);
+                foreach (string thumbPath in existingThumbs)
+                {
+                    if (thumbPath != baseThumbPath)
+                    {
+                        File.Delete(thumbPath);
+                        File.Delete(thumbPath + ".meta");
+                    }
+                }
+
                 CsvUtils.ItemFileAggregate itemFileAggregate = CsvUtils.GetItemFileAggregate(selectedPath);
                 List<CsvUtils.StudioItem> entries = itemFileAggregate.GetEntries<CsvUtils.StudioItem>();
 
