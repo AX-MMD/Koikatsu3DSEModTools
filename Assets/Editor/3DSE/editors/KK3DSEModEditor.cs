@@ -183,7 +183,7 @@ public class Modify3DSEModWindow : EditorWindow
 		fields.Update(oldFields);
 		itemFileAgg = CsvUtils.GetItemFileAggregate(path);
 
-		EnsureDataFilesFolderIntegrity(itemFileAgg);
+		if ( ! CsvUtils.EnsureDataFilesFolderIntegrity(itemFileAgg, fields)) AssetDatabase.Refresh();
 
 		if (itemFileAgg.groupFiles.Length != 1)
 		{
@@ -211,91 +211,6 @@ public class Modify3DSEModWindow : EditorWindow
 			studioTabMode = 1;
 			firstCategory = itemFileAgg.modCategoryNumber;
 		}
-	}
-
-	private static void EnsureDataFilesFolderIntegrity(CsvUtils.ItemFileAggregate itemFileAgg)
-	{
-		if ( ! (itemFileAgg.GetDefaultGroupFile() == null || itemFileAgg.GetDefaultCategoryFile() == null || itemFileAgg.GetDefaultListFile() == null))
-		{
-			return; // All files are present, all is good
-		}
-
-		if ( ! EditorUtility.DisplayDialog("Rebuild Data Files", "Some List/Studio files are missing or corrupt, try to rebuild?", "Yes", "No"))
-		{
-			throw new Exception("Rebuild aborted by user");
-		}
-
-		// If null, both ItemGroup and ItemCategory files are missing or have an incorrect name.
-		string groupNumber = itemFileAgg.modGroupNumber;
-		// If null, ItemList file is missing or has an incorrect name.
-		string categoryNumber = itemFileAgg.modCategoryNumber; 
-		// If both ItemCategory and ItemList files are missing, rebuild assuming default (11, 3DSE).
-		string groupName;
-
-		// ItemGroup integrity
-		if (itemFileAgg.GetDefaultGroupFile() == null || itemFileAgg.IsEmptyEntries<CsvUtils.StudioGroup>())
-		{
-			groupNumber = groupNumber ?? fields.muid;
-			groupName = (groupNumber == "11" || groupNumber == null) ? "3DSE" : fields.name;
-			string path = Path.Combine(itemFileAgg.csvFolder, "ItemGroup_DataFiles.csv");
-			CsvUtils.WriteToCsv(path, new CsvUtils.StudioGroup[] { new CsvUtils.StudioGroup(groupNumber, groupName) });
-			File.Create(path + ".meta").Close();
-		}
-		else
-		{
-			groupNumber = itemFileAgg.GetFirstEntry<CsvUtils.StudioGroup>().groupNumber;
-		}
-
-		// ItemCategory integrity
-		if (itemFileAgg.GetDefaultCategoryFile() == null)
-		{
-			string path = Path.Combine(itemFileAgg.csvFolder, "ItemCategory_00_" + groupNumber + ".csv");
-			CsvUtils.WriteToCsv(path, new CsvUtils.StudioCategory[] { });
-			File.Create(path + ".meta").Close();
-			itemFileAgg.Refresh();
-		}
-
-
-		// ItemList integrity
-		if (itemFileAgg.GetDefaultListFile() == null)
-		{
-			string path = Path.Combine(itemFileAgg.csvFolder, "ItemList_00_" + groupNumber + "_" + categoryNumber + ".csv");
-			CsvUtils.WriteToCsv(path, new CsvUtils.StudioItem[] { });
-			File.Create(path + ".meta").Close();
-		}
-		else if (categoryNumber == null)
-		{
-			// Is incorrect ItemList file name, renaming file.
-			CsvUtils.StudioCategory first = itemFileAgg.GetFirstEntry<CsvUtils.StudioCategory>();
-			if (first != null)
-			{
-				categoryNumber = first.categoryNumber;
-			}
-			else if (!itemFileAgg.IsEmptyEntries<CsvUtils.StudioItem>())
-			{
-				categoryNumber = itemFileAgg.GetFirstEntry<CsvUtils.StudioItem>().categoryNumber;
-			}
-			else
-			{
-				if (groupNumber != "11")
-				{
-					categoryNumber = "01";
-				}
-				else if (!string.IsNullOrEmpty(fields.muid))
-				{
-					categoryNumber = fields.muid + "01";
-				}
-				else
-				{
-					throw new Exception("Rebuild Failed, too many missing elements");
-				}
-			}
-
-			Utils.FileMove(itemFileAgg.GetDefaultListFile(), Path.Combine(itemFileAgg.csvFolder, "ItemList_00_" + groupNumber + "_" + categoryNumber + ".csv"));
-		}
-
-		itemFileAgg.Refresh();
-		AssetDatabase.Refresh();
 	}
 
 	private void OnGUI()
