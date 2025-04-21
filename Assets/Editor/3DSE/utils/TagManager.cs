@@ -31,6 +31,8 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 			public const string NoLoop = "no-loop";
 			public const string NoKeepName = "no-keep-name";
 			public const string Reset = "reset";
+			// extra action tags
+			public const string Format = "format";
 
 			public static HashSet<string> ToHashSet() {
 				// add every fields in this class except for the ToHashSet method
@@ -208,9 +210,17 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 		{
 			if (tags.Contains(Tags.KeepName))
 			{
-				return filename + (tags.Contains(Tags.Indexed) ? index.ToString("D2") : "");
+				if (tags.Contains(Tags.Format))
+				{
+					return Utils.ToItemCase(filename) + (tags.Contains(Tags.Indexed) ? index.ToString("D2") : "");
+				}
+				else
+				{
+					return filename + (tags.Contains(Tags.Indexed) ? index.ToString("D2") : "");
+				}		
 			}
-			if (tags.Contains(Tags.FormatKeepName))
+			// legacy code
+			else if (tags.Contains(Tags.FormatKeepName))
 			{
 				return Utils.ToItemCase(filename) + (tags.Contains(Tags.Indexed) ? index.ToString("D2") : "");
 			}
@@ -243,7 +253,8 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 				name = filename + name;
 			}
 
-			return tags.Contains(Tags.Indexed) ? name + index.ToString("D2") : name;
+			name = tags.Contains(Tags.Indexed) ? name + index.ToString("D2") : name;
+			return tags.Contains(Tags.Format) ? Utils.ToItemCase (name) : name;
 		}
 
 		public static PrefabModifier GetPrefabModifier(ICollection<string> tags)
