@@ -171,8 +171,18 @@ namespace IllusionMods.Koikatsu3DSECategoryTool {
 			string folderName = Path.GetFileName(folder);
 			
 			Match match = Regex.Match(folderName, @"^(?<categoryName>[^()]+)(\((?<author>[^)]+)\))?$");
-			string categoryName = tags.Contains(TagManager.Tags.LegacyClassifier) ? match.Groups["categoryName"].Value.Trim() : folderName;
-			string author = match.Groups["author"].Value.Trim();
+			string categoryName;
+			string author;
+			if (tags.Contains(TagManager.Tags.LegacyClassifier))
+			{
+				categoryName = match.Groups["categoryName"].Value.Trim();
+				author = match.Groups["author"].Value.Trim();
+			}
+			else
+			{
+				categoryName = folderName;
+				author = string.Empty;
+			}
 			List<Category> categories = new List<Category>();
 
 			if (!tags.Contains(TagManager.Tags.LegacyClassifier) || !string.IsNullOrEmpty(author))
@@ -266,9 +276,13 @@ namespace IllusionMods.Koikatsu3DSECategoryTool {
 		private string PadSectionString(string input)
 		{
 			int totalLength = 13;
-			int paddingLength = totalLength - input.Length;
+			int paddingLength = Math.Max(0, totalLength - input.Length);
 			int leftPadding = paddingLength / 2;
 			int rightPadding = paddingLength - leftPadding;
+			if (totalLength - input.Length < 0)
+			{
+				leftPadding = rightPadding = 3;
+			}
 			if (paddingLength == 3)
 			{
 				rightPadding = leftPadding = 1;
@@ -289,6 +303,4 @@ namespace IllusionMods.Koikatsu3DSECategoryTool {
 			}
 		}
 	}
-
-	
 }
