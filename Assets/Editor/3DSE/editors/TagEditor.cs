@@ -54,8 +54,15 @@ public class TagEditorWindow : EditorWindow
 	public static void ShowWindow(string path)
 	{
 		TagEditorWindow window = GetWindow<TagEditorWindow>("3DSE/Edit 3dse tags");
-		window.selectedPath = path;
-		window.currentTags = TagManager.LoadTags(path);
+		if (Path.GetExtension(path) == TagManager.FileExtention)
+		{
+			window.selectedPath = Path.GetDirectoryName(path);
+		}
+		else
+		{
+			window.selectedPath = path;
+		}
+		window.currentTags = TagManager.LoadTags(window.selectedPath);
 		window.Show();
 	}
 
