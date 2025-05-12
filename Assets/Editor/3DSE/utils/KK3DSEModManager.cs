@@ -209,10 +209,7 @@ namespace IllusionMods.Koikatsu3DSEModTools {
 					if (seComponent != null)
 					{
 						seComponent._clip = audioClip;
-						if (item.prefabModifier.isLoop)
-						{
-							seComponent._isLoop = true;
-						}
+						seComponent._isLoop = item.prefabModifier.isLoop;
 						if (item.prefabModifier.threshold != null)
 						{
 							seComponent._rolloffDistance = new Threshold(item.prefabModifier.threshold.Item1, item.prefabModifier.threshold.Item2);
