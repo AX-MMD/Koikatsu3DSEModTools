@@ -10,3 +10,25 @@ Download the [latest release on GitHub](https://github.com/AX-MMD/Koikatsu3DSEMo
 
 # Documentation
 https://docs.google.com/document/d/1WJgnBjcwGyEbW5dCaUketodu4NnESuEmuuUAQhNfpu8/edit?usp=drive_link
+.
+
+.
+
+.
+
+.
+
+.
+
+# インストール
+
+### 事前準備
+
+まず、KoikatsuModdingToolsと適切なUnityバージョンをダウンロードしてください。[***使い方***](https://github.com/IllusionMods/KoikatsuModdingTools?tab=readme-ov-file#how-to-use-it)セクションの手順に従いますが、まだUnityは起動しないでください。
+
+### ツールの追加
+
+[GitHubの最新リリース](https://github.com/AX-MMD/Koikatsu3DSEModTools/releases)（Koikatsu3DSEModTools.v1.x.zip）をダウンロードし、.zipから解凍した内容をKoikatsuModdingToolsフォルダにドラッグ＆ドロップしてください。この操作でファイルの上書き確認は表示されず、完了すると`<toolsフォルダ>/Assets/Editor`内に`/3DSE`フォルダが作成されます。
+
+# ドキュメント (DeepL翻訳 日本語)
+https://docs.google.com/document/d/1HCKzkHDl_t4ubZ6cR6nWR05zie9BM-ZLzS-8sWx-swA/edit?usp=sharing
