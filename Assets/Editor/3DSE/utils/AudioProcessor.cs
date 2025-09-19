@@ -11,7 +11,7 @@ namespace IllusionMods.Koikatsu3DSEModTools
 {
 	public static class AudioProcessor
 	{
-		public static List<string> ValidFileExtensions = new List<string>(new string[] { ".wav", ".mp3" });
+		public static List<string> ValidFileExtensions = new List<string>(new string[] { ".wav", ".mp3", ".ogg" });
 		public const sbyte maxdB = 0;
 		public const sbyte mindB = -60;
 		public const sbyte baseVolume = -40;
@@ -26,9 +26,13 @@ namespace IllusionMods.Koikatsu3DSEModTools
 			{
 				ProcessMp3(Path.GetFullPath(filePath), wavPath => AdjustSilenceWav(Path.GetFullPath(wavPath), silenceDurationMs, auto, silenceThreshold, true), overwrite);
 			}
+			else if (Path.GetExtension(filePath).ToLower() == ".ogg")
+			{
+				ProcessOgg(Path.GetFullPath(filePath), wavPath => AdjustSilenceWav(Path.GetFullPath(wavPath), silenceDurationMs, auto, silenceThreshold, true), overwrite);
+			}
 			else
 			{
-				throw new Exception("Unsupported file type, only MP3 and WAV are supported");
+				throw new Exception("Unsupported file type, only MP3, WAV, OGG are supported");
 			}
 		}
 
@@ -103,6 +107,14 @@ namespace IllusionMods.Koikatsu3DSEModTools
 			{
 				ProcessMp3(Path.GetFullPath(filePath), wavPath => AdjustVolumePercentWav(Path.GetFullPath(wavPath), percent, true), overwrite);
 			}
+			else if (Path.GetExtension(filePath).ToLower() == ".ogg")
+			{
+				ProcessOgg(Path.GetFullPath(filePath), wavPath => AdjustVolumePercentWav(Path.GetFullPath(wavPath), percent, true), overwrite);
+			}
+			else
+			{
+				throw new Exception("Unsupported file type, only MP3, WAV, OGG are supported");
+			}
 		}
 
 		public static void AdjustVolumePercentWav(string filePath, short percent, bool overwrite = true)
@@ -137,6 +149,14 @@ namespace IllusionMods.Koikatsu3DSEModTools
 			else if (Path.GetExtension(inputFilePath).ToLower() == ".mp3")
 			{
 				ProcessMp3(Path.GetFullPath(inputFilePath), wavPath => NormalizeVolumeWav(Path.GetFullPath(wavPath), targetRmsDb, true), overwrite);
+			}
+			else if (Path.GetExtension(inputFilePath).ToLower() == ".ogg")
+			{
+				ProcessOgg(Path.GetFullPath(inputFilePath), wavPath => NormalizeVolumeWav(Path.GetFullPath(wavPath), targetRmsDb, true), overwrite);
+			}
+			else
+			{
+				throw new Exception("Unsupported file type, only MP3, WAV, OGG are supported");
 			}
 		}
 
@@ -217,6 +237,53 @@ namespace IllusionMods.Koikatsu3DSEModTools
 				string outputPath = overwrite ? filePath : GetFileCopyPath(filePath);
 				string arguments = String.Format("-y -i \"{0}\" -codec:a libmp3lame -b:a 128k \"{1}\"", tempWavPath, outputPath);
 				System.Diagnostics.Process.Start("ffmpeg.exe", arguments).WaitForExit();
+			}
+			finally
+			{
+				File.Delete(tempWavPath);
+				File.Delete(tempWavPath + ".meta");
+			}
+		}
+
+		public static void ProcessOgg(string filePath, Action<string> wavFunction, bool overwrite = true)
+		{
+			string tempWavPath = Path.ChangeExtension(filePath, ".temp.wav");
+			try
+			{
+				// Convert OGG to WAV
+				var proc1 = new System.Diagnostics.Process();
+				proc1.StartInfo.FileName = "ffmpeg";
+				proc1.StartInfo.Arguments = string.Format("-y -i \"{0}\" \"{1}\"", filePath, tempWavPath);
+				proc1.StartInfo.CreateNoWindow = true;
+				proc1.StartInfo.UseShellExecute = false;
+				proc1.StartInfo.RedirectStandardError = true;
+				proc1.Start();
+				proc1.WaitForExit();
+				if (proc1.ExitCode != 0)
+					throw new Exception("ffmpeg failed to convert OGG to WAV: " + proc1.StandardError.ReadToEnd());
+
+
+				// Execute the provided WAV function
+				wavFunction(tempWavPath);
+
+				// Convert WAV back to Ogg
+				if (System.Diagnostics.Process.Start("ffmpeg.exe", "-version") == null)
+				{
+					throw new Exception("ffmpeg.exe not found in PATH, it is required for Ogg manipulation.");
+				}
+
+				// Convert processed WAV back to OGG
+				string outputPath = overwrite ? filePath : GetFileCopyPath(filePath);
+				var proc2 = new System.Diagnostics.Process();
+				proc2.StartInfo.FileName = "ffmpeg";
+				proc2.StartInfo.Arguments = string.Format("-y -i \"{0}\" -c:a libvorbis \"{1}\"", tempWavPath, outputPath);
+				proc2.StartInfo.CreateNoWindow = true;
+				proc2.StartInfo.UseShellExecute = false;
+				proc2.StartInfo.RedirectStandardError = true;
+				proc2.Start();
+				proc2.WaitForExit();
+				if (proc2.ExitCode != 0)
+					throw new Exception("ffmpeg failed to convert WAV back to OGG: " + proc2.StandardError.ReadToEnd());
 			}
 			finally
 			{

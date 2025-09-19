@@ -47,7 +47,6 @@ namespace Studio.Sound
 		{
 			Logarithmic,
 			Linear,
-			BN2  // In reference to the modder BN2, who uses this value in his mod.
 		}
 	}
 }
