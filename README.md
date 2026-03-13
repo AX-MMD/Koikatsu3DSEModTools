@@ -2,7 +2,7 @@
 
 ### Prerequisites
 
-First, you must download KoikatsuModdingTools and the proper Unity version. Follow the steps on their page in the [***How to use it***](https://github.com/IllusionMods/KoikatsuModdingTools?tab=readme-ov-file#how-to-use-it) section, but don’t open Unity yet.
+First, you must download KoikatsuModdingTools and the proper Unity version. Follow the steps on their page in the [***How to use it***](https://gitgoon.dev/IllusionMods/KoikatsuModdingTools#how-to-use-it) section, but don’t open Unity yet.
 
 ### Adding my tools
 
@@ -24,7 +24,7 @@ https://docs.google.com/document/d/1WJgnBjcwGyEbW5dCaUketodu4NnESuEmuuUAQhNfpu8/
 
 ### 事前準備
 
-まず、KoikatsuModdingToolsと適切なUnityバージョンをダウンロードしてください。[***使い方***](https://github.com/IllusionMods/KoikatsuModdingTools?tab=readme-ov-file#how-to-use-it)セクションの手順に従いますが、まだUnityは起動しないでください。
+まず、KoikatsuModdingToolsと適切なUnityバージョンをダウンロードしてください。[***使い方***](https://gitgoon.dev/IllusionMods/KoikatsuModdingTools#how-to-use-it)セクションの手順に従いますが、まだUnityは起動しないでください。
 
 ### ツールの追加
 
