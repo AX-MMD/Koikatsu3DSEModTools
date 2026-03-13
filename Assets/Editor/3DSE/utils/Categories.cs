@@ -5,6 +5,8 @@ using IllusionMods.Koikatsu3DSEModTools;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Linq;
+using UnityEditor;
+using UnityEngine;
 
 namespace IllusionMods.Koikatsu3DSECategoryTool {
 
@@ -254,7 +256,7 @@ namespace IllusionMods.Koikatsu3DSECategoryTool {
 					Match idMatch = Regex.Match(filename, Utils.FileIDPattern);
 					if (idMatch.Success && idMatch.Groups.Count > 1)
 					{
-						filename = filename.Substring(0, idMatch.Groups[1].Index - 1);
+						filename = filename.Substring(0, idMatch.Groups[1].Index - 2);
 					}
 					items.Add(new StudioItemParam(
 						BuildItemName(pathName, cumulTags, filename, index++),
